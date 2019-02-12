@@ -94,6 +94,15 @@ class dirType {
     if (this.myColor !== PointColor.Black) this.enemyColor = PointColor.Black;
     this.scan();
   }
+  /**
+   * count
+   * @description:
+   *   统计扫描到的点并保存
+   * @param: {number} x 当前横坐标
+   * @param: {number} y 当前纵坐标
+   * @param: {number} c 当前扫到第几个
+   * @return: {void}
+   */
   count(x: number, y: number, c: number) {
     if (c > 0) {
       if (
@@ -146,6 +155,12 @@ class dirType {
     }
     this.previousColor = this.matrix[x][y];
   }
+  /**
+   * scan
+   * @description:
+   *   对某个方向进行扫描
+   * @return: {void}
+   */
   scan() {
     switch (this.dir) {
       case ScanDir.LT:
@@ -268,7 +283,14 @@ class emptyPoint {
       Math.random() * 5;
     this.score = this.positionScore + this.calcScoreSum();
   }
-
+  /**
+   * calcMine
+   * @description:
+   *   计算己方得分
+   * @param: {dirType} dirA 方向A
+   * @param: {dirType} dirB 方向B，在A的对面
+   * @return: {number} 返回计算出来的分值
+   */
   private calcMine(dirA: dirType, dirB: dirType): number {
     let closeSides: number = 0;
     let validArea: number = 0;
@@ -286,6 +308,7 @@ class emptyPoint {
     }
     switch (dirA.myConsecutiveCount + dirB.myConsecutiveCount) {
       case 0:
+        //以下是当前方向上分散棋子个数，间隔不超过1
         switch (myCountSum) {
           case 0:
             return 0;
@@ -342,6 +365,14 @@ class emptyPoint {
     }
   }
 
+  /**
+   * calcEnemy
+   * @description:
+   *   计算敌方得分
+   * @param: {dirType} dirA 方向A
+   * @param: {dirType} dirB 方向B，在A的对面
+   * @return: {number} 返回计算出来的分值
+   */
   private calcEnemy(dirA: dirType, dirB: dirType): number {
     let closeSides: number = 0;
     let validArea: number = 0;
@@ -359,6 +390,7 @@ class emptyPoint {
     }
     switch (dirA.enemyConsecutiveCount + dirB.enemyConsecutiveCount) {
       case 0:
+        //以下是当前方向上分散棋子个数，间隔不超过1
         switch (enemyCountSum) {
           case 0:
             return 0;
@@ -414,31 +446,60 @@ class emptyPoint {
         return 10 * 10000;
     }
   }
-
+  /**
+   * calcLeftToRightScore
+   * @description:
+   *   计算左到右方向上的分值
+   * @return: {number} 返回计算出来的分值，己方和敌方分数之和
+   */
   private calcLeftToRightScore(): number {
     return (
       this.calcMine(this.dirLeft, this.dirRight) +
       this.calcEnemy(this.dirLeft, this.dirRight)
     );
   }
+  /**
+   * calcLeftTopToRightBottomScore
+   * @description:
+   *   计算左上到右下方向上的分值
+   * @return: {number} 返回计算出来的分值，己方和敌方分数之和
+   */
   private calcLeftTopToRightBottomScore(): number {
     return (
       this.calcMine(this.dirLeftTop, this.dirRightBottom) +
       this.calcEnemy(this.dirLeftTop, this.dirRightBottom)
     );
   }
+  /**
+   * calcTopToBottomScore
+   * @description:
+   *   计算上到下方向上的分值
+   * @return: {number} 返回计算出来的分值，己方和敌方分数之和
+   */
   private calcTopToBottomScore(): number {
     return (
       this.calcMine(this.dirTop, this.dirBottom) +
       this.calcEnemy(this.dirTop, this.dirBottom)
     );
   }
+  /**
+   * calcRightTopToLeftBottomScore
+   * @description:
+   *   计算右上到左下方向上的分值
+   * @return: {number} 返回计算出来的分值，己方和敌方分数之和
+   */
   private calcRightTopToLeftBottomScore(): number {
     return (
       this.calcMine(this.dirRightTop, this.dirLeftBottom) +
       this.calcEnemy(this.dirRightTop, this.dirLeftBottom)
     );
   }
+  /**
+   * calcScoreSum
+   * @description:
+   *   计算所有方向的分值综合
+   * @return: {number} 返回计算出来的分值，8个方向之和
+   */
   private calcScoreSum(): number {
     let scoreSum =
       this.calcLeftToRightScore() +
@@ -544,12 +605,8 @@ export default class Map extends Vue {
    */
   onMouseClick(event: MouseEvent): void {
     //将点击的坐标点转换成棋盘矩阵的坐标
-    let x: number = Math.round(
-      (event.offsetX * 1.0) / this.latticeWidth
-    );
-    let y: number = Math.round(
-      (event.offsetY * 1.0) / this.latticeHeight
-    );
+    let x: number = Math.round((event.offsetX * 1.0) / this.latticeWidth);
+    let y: number = Math.round((event.offsetY * 1.0) / this.latticeHeight);
     //超出棋盘范围了
     if (x < 1 || x > this.size || y < 1 || y > this.size) return;
     // 人机人白没轮到自己，return
@@ -641,10 +698,10 @@ export default class Map extends Vue {
         depth - 1,
         surplusEmptyPointsCount - 1
       );
-      if(sourceColor === enemyColor){
+      if (sourceColor === enemyColor) {
         highScorePointList[0].score += point1.score;
         highScorePointList[1].score += point2.score;
-      }else{
+      } else {
         highScorePointList[0].score -= point1.score;
         highScorePointList[1].score -= point2.score;
       }
@@ -769,9 +826,18 @@ export default class Map extends Vue {
     //绘制棋盘边框
     this.canvasContext.beginPath();
     this.canvasContext.moveTo(this.latticeWidth, this.latticeHeight);
-    this.canvasContext.lineTo(this.latticeWidth, this.canvasHeight - this.latticeHeight);
-    this.canvasContext.lineTo(this.canvasWidth - this.latticeWidth, this.canvasHeight - this.latticeHeight);
-    this.canvasContext.lineTo(this.canvasWidth - this.latticeWidth, this.latticeHeight);
+    this.canvasContext.lineTo(
+      this.latticeWidth,
+      this.canvasHeight - this.latticeHeight
+    );
+    this.canvasContext.lineTo(
+      this.canvasWidth - this.latticeWidth,
+      this.canvasHeight - this.latticeHeight
+    );
+    this.canvasContext.lineTo(
+      this.canvasWidth - this.latticeWidth,
+      this.latticeHeight
+    );
     this.canvasContext.closePath();
     this.canvasContext.stroke();
     //绘制分割线用1px宽度足矣
