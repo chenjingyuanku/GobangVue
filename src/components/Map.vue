@@ -24,6 +24,430 @@
 <script lang="ts">
 import { Component, Prop, Vue } from "vue-property-decorator";
 
+enum PointColor {
+  Empty = 0,
+  Black,
+  White
+}
+enum ScanDir {
+  LT = 0,
+  T,
+  RT,
+  L,
+  R,
+  LB,
+  B,
+  RB
+}
+const Who = {
+  Black: true,
+  White: false
+};
+class dirType {
+  //区间内我方棋子总个数，遇到连续2空子停止计数
+  myCount: number = 0;
+  //区间内我方连续棋子个数
+  myConsecutiveCount: number = 0;
+  //一个方向的扫描距离，最大四格，到敌方棋子、棋盘边缘截止
+  mySearchArea: number = 0;
+  //区间内敌方棋子总个数，遇到连续2空子停止计数
+  enemyCount: number = 0;
+  //区间内敌方连续棋子个数
+  enemyConsecutiveCount: number = 0;
+  //一个方向的扫描距离，最大四格，到我方棋子、棋盘边缘截止
+  enemySearchArea: number = 0;
+  //己方颜色
+  private myColor: PointColor = PointColor.Black;
+  private enemyColor: PointColor = PointColor.White;
+  private dir!: ScanDir;
+  private x!: number;
+  private y!: number;
+  private size!: number;
+  private matrix!: Array<Array<number>>;
+
+  private myConsecutiveFlag: boolean = true;
+  private enemyConsecutiveFlag: boolean = true;
+  private myScanFlag: boolean = true;
+  private enemyScanFlag: boolean = true;
+  private consecutiveEmptyCountFlag: boolean = true;
+
+  private previousColor: PointColor = PointColor.Empty;
+  constructor(
+    matrix: Array<Array<number>>,
+    x: number,
+    y: number,
+    color: PointColor,
+    dir: ScanDir,
+    size: number
+  ) {
+    this.myColor = color;
+    this.dir = dir;
+    this.size = size;
+    this.matrix = matrix;
+    this.myConsecutiveFlag = true;
+    this.enemyConsecutiveFlag = true;
+    this.myScanFlag = true;
+    this.enemyScanFlag = true;
+    this.consecutiveEmptyCountFlag = true;
+    this.x = x;
+    this.y = y;
+    if (this.myColor !== PointColor.Black) this.enemyColor = PointColor.Black;
+    this.scan();
+  }
+  count(x: number, y: number, c: number) {
+    if (c > 0) {
+      if (
+        this.matrix[x][y] === PointColor.Empty &&
+        this.previousColor === PointColor.Empty
+      ) {
+        this.consecutiveEmptyCountFlag = false;
+      }
+    }
+    //扫到己方棋子，中断敌方棋子扫描
+    if (this.matrix[x][y] === this.myColor) {
+      this.enemyScanFlag = false;
+    }
+    //扫到敌方棋子，中断己方棋子扫描
+    else if (this.matrix[x][y] === this.enemyColor) {
+      this.myScanFlag = false;
+    }
+    //扫到空子，连续标志设置为false，对双方都一样
+    else {
+      this.myConsecutiveFlag = false;
+      this.enemyConsecutiveFlag = false;
+    }
+    //如果允许扫描
+    if (this.myScanFlag) {
+      //扫描距离增加
+      this.mySearchArea++;
+      //对己方棋子计数
+      if (
+        this.matrix[x][y] === this.myColor &&
+        this.consecutiveEmptyCountFlag
+      ) {
+        this.myCount++;
+      }
+      //对连续己方棋子计数
+      if (this.myConsecutiveFlag) {
+        this.myConsecutiveCount++;
+      }
+    }
+    if (this.enemyScanFlag) {
+      this.enemySearchArea++;
+      if (
+        this.matrix[x][y] === this.enemyColor &&
+        this.consecutiveEmptyCountFlag
+      ) {
+        this.enemyCount++;
+      }
+      if (this.enemyConsecutiveFlag) {
+        this.enemyConsecutiveCount++;
+      }
+    }
+    this.previousColor = this.matrix[x][y];
+  }
+  scan() {
+    switch (this.dir) {
+      case ScanDir.LT:
+        for (
+          let i = this.x - 1, j = this.y - 1, c = 0;
+          i > 0 && j > 0 && c < 4;
+          i--, j--, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.T:
+        for (let i = this.x, j = this.y - 1, c = 0; j > 0 && c < 4; j--, c++) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.RT:
+        for (
+          let i = this.x + 1, j = this.y - 1, c = 0;
+          i < this.size && j > 0 && c < 4;
+          i++, j--, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.L:
+        for (let i = this.x - 1, j = this.y, c = 0; i > 0 && c < 4; i--, c++) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.R:
+        for (
+          let i = this.x + 1, j = this.y, c = 0;
+          i < this.size && c < 4;
+          i++, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.LB:
+        for (
+          let i = this.x - 1, j = this.y + 1, c = 0;
+          i > 0 && j < this.size && c < 4;
+          i--, j++, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.B:
+        for (
+          let i = this.x, j = this.y + 1, c = 0;
+          j < this.size && c < 4;
+          j++, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      case ScanDir.RB:
+        for (
+          let i = this.x + 1, j = this.y + 1, c = 0;
+          i < this.size && j < this.size && c < 4;
+          i++, j++, c++
+        ) {
+          this.count(i, j, c);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  reset() {
+    this.myCount = 0;
+    this.myConsecutiveCount = 0;
+    this.mySearchArea = 0;
+    this.enemyCount = 0;
+    this.enemyConsecutiveCount = 0;
+    this.enemySearchArea = 0;
+    this.myConsecutiveFlag = true;
+    this.enemyConsecutiveFlag = true;
+    this.myScanFlag = true;
+    this.enemyScanFlag = true;
+  }
+}
+class emptyPoint {
+  private dirLeftTop!: dirType;
+  private dirTop!: dirType;
+  private dirRightTop!: dirType;
+  private dirLeft!: dirType;
+  private dirRight!: dirType;
+  private dirLeftBottom!: dirType;
+  private dirBottom!: dirType;
+  private dirRightBottom!: dirType;
+  private myColor: PointColor = PointColor.Black;
+  score: number = 0;
+  private positionScore: number = 0;
+  private matrix!: Array<Array<number>>;
+  constructor(
+    matrix: Array<Array<number>>,
+    x: number,
+    y: number,
+    myColor: PointColor,
+    size: number
+  ) {
+    this.myColor = myColor; //保存我方棋子颜色
+    this.dirLeftTop = new dirType(matrix, x, y, myColor, ScanDir.LT, size);
+    this.dirTop = new dirType(matrix, x, y, myColor, ScanDir.T, size);
+    this.dirRightTop = new dirType(matrix, x, y, myColor, ScanDir.RT, size);
+    this.dirLeft = new dirType(matrix, x, y, myColor, ScanDir.L, size);
+    this.dirRight = new dirType(matrix, x, y, myColor, ScanDir.R, size);
+    this.dirLeftBottom = new dirType(matrix, x, y, myColor, ScanDir.LB, size);
+    this.dirBottom = new dirType(matrix, x, y, myColor, ScanDir.B, size);
+    this.dirRightBottom = new dirType(matrix, x, y, myColor, ScanDir.RB, size);
+    this.matrix = matrix;
+    this.positionScore =
+      (Math.sqrt((size / 2) * (size / 2) * 2) -
+        Math.sqrt(
+          (x - size / 2) * (x - size / 2) + (y - size / 2) * (y - size / 2)
+        )) *
+        3 +
+      Math.random() * 5;
+    this.score = this.positionScore + this.calcScoreSum();
+  }
+
+  private calcMine(dirA: dirType, dirB: dirType): number {
+    let closeSides: number = 0;
+    let validArea: number = 0;
+    let myCountSum: number = 0;
+    myCountSum = dirA.myCount + dirB.myCount;
+    validArea = dirA.mySearchArea + dirB.mySearchArea;
+    if (validArea < 4) {
+      return 0; //TODO 一个很小的值
+    }
+    if (dirA.mySearchArea === dirA.myConsecutiveCount) {
+      closeSides++;
+    }
+    if (dirB.mySearchArea === dirB.myConsecutiveCount) {
+      closeSides++;
+    }
+    switch (dirA.myConsecutiveCount + dirB.myConsecutiveCount) {
+      case 0:
+        switch (myCountSum) {
+          case 0:
+            return 0;
+          case 1:
+            return 100;
+          case 2:
+            return 200;
+          case 3:
+            return 400;
+          default:
+            return 2000;
+        }
+      case 1:
+        //2连，2头空
+        if (closeSides === 0) {
+          //活跳三
+          if (myCountSum === 2) {
+            return 4000;
+          }
+          //冲四
+          if (myCountSum >= 3) {
+            return 5000;
+          }
+          //普通连2
+          return 1000;
+        } //眠二
+        else {
+          return 100;
+        }
+      case 2:
+        //3连，2头空
+        if (closeSides === 0) {
+          //冲四
+          if (myCountSum >= 3) {
+            return 5000;
+          }
+          //普通连3
+          return 4000;
+        } //眠三
+        else {
+          return 1000;
+        }
+      case 3:
+        //活四
+        if (closeSides === 0) {
+          return 30000;
+        } //冲四
+        else {
+          return 5000;
+        }
+      default:
+        //五连子了，返回最大得分
+        return 50 * 10000;
+    }
+  }
+
+  private calcEnemy(dirA: dirType, dirB: dirType): number {
+    let closeSides: number = 0;
+    let validArea: number = 0;
+    let enemyCountSum: number = 0;
+    enemyCountSum = dirA.enemyCount + dirB.enemyCount;
+    validArea = dirA.enemySearchArea + dirB.enemySearchArea;
+    if (validArea < 4) {
+      return 0; //TODO 一个很小的值
+    }
+    if (dirA.enemySearchArea === dirA.enemyConsecutiveCount) {
+      closeSides++;
+    }
+    if (dirB.enemySearchArea === dirB.enemyConsecutiveCount) {
+      closeSides++;
+    }
+    switch (dirA.enemyConsecutiveCount + dirB.enemyConsecutiveCount) {
+      case 0:
+        switch (enemyCountSum) {
+          case 0:
+            return 0;
+          case 1:
+            return 100;
+          case 2:
+            return 200;
+          case 3:
+            return 400;
+          default:
+            return 2000;
+        }
+      case 1:
+        //2连，2头空
+        if (closeSides === 0) {
+          //活跳三
+          if (enemyCountSum === 2) {
+            return 3000;
+          }
+          //冲四
+          if (enemyCountSum >= 3) {
+            return 4000;
+          }
+          //普通连2
+          return 1000;
+        } //眠二
+        else {
+          return 100;
+        }
+      case 2:
+        //3连，2头空
+        if (closeSides === 0) {
+          //冲四
+          if (enemyCountSum >= 3) {
+            return 4000;
+          }
+          //普通连3
+          return 3000;
+        } //眠三
+        else {
+          return 1000;
+        }
+      case 3:
+        //活四
+        if (closeSides === 0) {
+          return 21000;
+        } //冲四
+        else {
+          return 5000;
+        }
+      default:
+        //敌方五连子了，返回仅次于己方五连子的最大得分
+        return 10 * 10000;
+    }
+  }
+
+  private calcLeftToRightScore(): number {
+    return (
+      this.calcMine(this.dirLeft, this.dirRight) +
+      this.calcEnemy(this.dirLeft, this.dirRight)
+    );
+  }
+  private calcLeftTopToRightBottomScore(): number {
+    return (
+      this.calcMine(this.dirLeftTop, this.dirRightBottom) +
+      this.calcEnemy(this.dirLeftTop, this.dirRightBottom)
+    );
+  }
+  private calcTopToBottomScore(): number {
+    return (
+      this.calcMine(this.dirTop, this.dirBottom) +
+      this.calcEnemy(this.dirTop, this.dirBottom)
+    );
+  }
+  private calcRightTopToLeftBottomScore(): number {
+    return (
+      this.calcMine(this.dirRightTop, this.dirLeftBottom) +
+      this.calcEnemy(this.dirRightTop, this.dirLeftBottom)
+    );
+  }
+  private calcScoreSum(): number {
+    let scoreSum =
+      this.calcLeftToRightScore() +
+      this.calcLeftTopToRightBottomScore() +
+      this.calcTopToBottomScore() +
+      this.calcRightTopToLeftBottomScore();
+    return scoreSum;
+  }
+}
 @Component
 export default class Map extends Vue {
   canvasContext!: CanvasRenderingContext2D; //画布对象
@@ -32,10 +456,10 @@ export default class Map extends Vue {
   latticeWidth: number = 200; //小格子宽度
   latticeHeight: number = 200; //小格子高度
   gameMode: number = 0; //0-人人对战 1-人机对战
-  whoDropping: boolean = true; //true黑子 false白子
+  whoDropping: boolean = Who.Black; //true黑子 false白子
   playing: boolean = true; //游戏进行状态
   stepStack: Array<[number, number, boolean]> = []; //记步栈
-  matrix: Array<Array<number>> = new Array<Array<number>>(); //棋盘矩阵0空1黑2白
+  matrix: Array<Array<number>> = new Array<Array<PointColor>>(); //棋盘矩阵0空1黑2白
   gameAIInvID: number = 0;
   @Prop({ default: 15 }) private size!: number;
   /**
@@ -69,7 +493,7 @@ export default class Map extends Vue {
       this.matrix.push([]);
       //构建矩阵列
       for (let j = 0; j < this.size; j++) {
-        this.matrix[i].push(0);
+        this.matrix[i].push(PointColor.Empty);
       }
     }
     //窗口大小发生变化时重新计算尺寸
@@ -119,20 +543,21 @@ export default class Map extends Vue {
    * @return: {void}
    */
   onMouseClick(event: MouseEvent): void {
+    //将点击的坐标点转换成棋盘矩阵的坐标
     let x: number = Math.round(
-      ((event.offsetX + 10) * 1.0) / this.latticeWidth
+      (event.offsetX * 1.0) / this.latticeWidth
     );
     let y: number = Math.round(
-      ((event.offsetY + 10) * 1.0) / this.latticeHeight
+      (event.offsetY * 1.0) / this.latticeHeight
     );
     //超出棋盘范围了
     if (x < 1 || x > this.size || y < 1 || y > this.size) return;
     // 人机人白没轮到自己，return
-    if (this.gameMode === 1 && this.whoDropping == true) {
+    if (this.gameMode === 1 && this.whoDropping === Who.Black) {
       return;
     }
     // 人机人黑没轮到自己，return
-    if (this.gameMode === 2 && this.whoDropping === false) {
+    if (this.gameMode === 2 && this.whoDropping === Who.White) {
       return;
     }
     if (!this.playing) {
@@ -141,231 +566,94 @@ export default class Map extends Vue {
     }
     this.dropChessman(x - 1, y - 1);
   }
-  /**
-   * calcPointScore
-   * @description:
-   *   计算当前方向分值
-   * @param: {number} count 两侧相同点个数
-   * @param: {boolean} who true表示己方棋子，false表示对方棋子
-   * @return: {number} 分数 返回当前方向分值
-   */
-  calcPointScore(count:number,who:boolean):number{
-    switch (count) {
-      case 0:
-        return 0;
-      case 1:
-        return who?800:1000;
-      case 2:
-        return who?5000:3000;
-      case 3:
-        return who?50000:10000;
-      default://五连珠
-        return who?1000000:100000;
-    }
-  }
+
   /**
    * calcPlacementCoordinate
    * @description:
    *   计算落子点坐标
-   * @param: {number} mineNumber 1黑 2白
-   * @param: {number} enemyNumber 1黑 2白
+   * @param: {Array<Array<number>>} map 上一次模拟后的情况
+   * @param: {PointColor} myColor 1黑 2白 模拟中的颜色
+   * @param: {PointColor} sourceColor 1黑 2白 实际的颜色
+   * @param: {number} depth 递归模拟深度
+   * @param: {number} surplusEmptyPointsCount 剩余空点个数
    * @return: {object} {x:横坐标,y:纵坐标}
    */
-  calcPlacementCoordinate(mineNumber: number,enemyNumber: number): { x: number; y: number } {
-    let x!: number, y!: number;
-    let maxMine = {
-      x: -1,
-      y: -1,
-      score: -1
-    };
-    let maxEnemy = {
-      x: -1,
-      y: -1,
-      score: -1
-    };
-    //遍历每一个空节点
+  calcPlacementCoordinate(
+    map: Array<Array<number>>,
+    myColor: PointColor,
+    sourceColor: PointColor,
+    depth: number,
+    surplusEmptyPointsCount: number
+  ): { x: number; y: number; score: number } {
+    let highScorePointList: Array<{ x: number; y: number; score: number }> = [
+      {
+        x: -1,
+        y: -1,
+        score: -1
+      },
+      {
+        x: -2,
+        y: -2,
+        score: -2
+      }
+    ];
+    let enemyColor =
+      myColor === PointColor.Black ? PointColor.White : PointColor.Black;
+    //创建新地图
+    let newMap1: Array<Array<number>> = [];
+    let newMap2: Array<Array<number>> = [];
     for (let i = 0; i < this.size; i++) {
+      newMap1.push([]);
+      newMap2.push([]);
       for (let j = 0; j < this.size; j++) {
-        //边缘1圈
-        /* if(i === 0 || j === 0 || i === this.size - 1 || j === this.size - 1){
-          
-        } */
-        if (this.matrix[i][j] !== 0) {
+        newMap1[i].push(map[i][j]);
+        newMap2[i].push(map[i][j]);
+        if (map[i][j] !== PointColor.Empty) {
           continue;
         }
-        //left-top
-        let count_lt = 0;
-        let count_t = 0;
-        let count_rt = 0;
-        let count_l = 0;
-        let count_r = 0;
-        let count_lb = 0;
-        let count_b = 0;
-        let count_rb = 0;
-        let score_sum = 0;
-        //计算当前空点8个方向上的己方连子个数
-        for (
-          let _x = i - 1, _y = j - 1;
-          _x >= 0 && _y >= 0 && this.matrix[_x][_y] === mineNumber;
-          _x--, _y--
-        ) {
-          count_lt++;
-        }
-        for (
-          let _x = i, _y = j - 1;
-          _y >= 0 && this.matrix[_x][_y] === mineNumber;
-          _y--
-        ) {
-          count_t++;
-        }
-        for (
-          let _x = i + 1, _y = j - 1;
-          _x < this.size && _y >= 0 && this.matrix[_x][_y] === mineNumber;
-          _x++, _y--
-        ) {
-          count_rt++;
-        }
-        for (
-          let _x = i - 1, _y = j;
-          _x >= 0 && this.matrix[_x][_y] === mineNumber;
-          _x--
-        ) {
-          count_l++;
-        }
-        for (
-          let _x = i + 1, _y = j;
-          _x < this.size && this.matrix[_x][_y] === mineNumber;
-          _x++
-        ) {
-          count_r++;
-        }
-        for (
-          let _x = i - 1, _y = j + 1;
-          _x >= 0 && _y < this.size && this.matrix[_x][_y] === mineNumber;
-          _x--, _y++
-        ) {
-          count_lb++;
-        }
-        for (
-          let _x = i, _y = j + 1;
-          _y < this.size && this.matrix[_x][_y] === mineNumber;
-          _y++
-        ) {
-          count_b++;
-        }
-        for (
-          let _x = i + 1, _y = j + 1;
-          _x < this.size && _y < this.size && this.matrix[_x][_y] === mineNumber;
-          _x++, _y++
-        ) {
-          count_rb++;
-        }
-        //计算当前空位己方得分
-        score_sum = this.calcPointScore(count_lt + count_rb, true) + 
-        this.calcPointScore(count_t + count_b, true) + 
-        this.calcPointScore(count_l + count_r, true) + 
-        this.calcPointScore(count_lb + count_rt, true);
-        //保存己方得分最大点的坐标和分值
-        if(score_sum > maxMine.score){
-          maxMine.score = score_sum;
-          maxMine.x = i;
-          maxMine.y = j;
-        }
-        count_lt = 0;
-        count_t = 0;
-        count_rt = 0;
-        count_l = 0;
-        count_r = 0;
-        count_lb = 0;
-        count_b = 0;
-        count_rb = 0;
-        //计算当前空点8个方向上的敌方连子个数
-        for (
-          let _x = i - 1, _y = j - 1;
-          _x >= 0 && _y >= 0 && this.matrix[_x][_y] === enemyNumber;
-          _x--, _y--
-        ) {
-          count_lt++;
-        }
-        for (
-          let _x = i, _y = j - 1;
-          _y >= 0 && this.matrix[_x][_y] === enemyNumber;
-          _y--
-        ) {
-          count_t++;
-        }
-        for (
-          let _x = i + 1, _y = j - 1;
-          _x < this.size && _y >= 0 && this.matrix[_x][_y] === enemyNumber;
-          _x++, _y--
-        ) {
-          count_rt++;
-        }
-        for (
-          let _x = i - 1, _y = j;
-          _x >= 0 && this.matrix[_x][_y] === enemyNumber;
-          _x--
-        ) {
-          count_l++;
-        }
-        for (
-          let _x = i + 1, _y = j;
-          _x < this.size && this.matrix[_x][_y] === enemyNumber;
-          _x++
-        ) {
-          count_r++;
-        }
-        for (
-          let _x = i - 1, _y = j + 1;
-          _x >= 0 && _y < this.size && this.matrix[_x][_y] === enemyNumber;
-          _x--, _y++
-        ) {
-          count_lb++;
-        }
-        for (
-          let _x = i, _y = j + 1;
-          _y < this.size && this.matrix[_x][_y] === enemyNumber;
-          _y++
-        ) {
-          count_b++;
-        }
-        for (
-          let _x = i + 1, _y = j + 1;
-          _x < this.size && _y < this.size && this.matrix[_x][_y] === enemyNumber;
-          _x++, _y++
-        ) {
-          count_rb++;
-        }
-        //计算当前空位敌方得分
-        score_sum = this.calcPointScore(count_lt + count_rb, false) + 
-        this.calcPointScore(count_t + count_b, false) + 
-        this.calcPointScore(count_l + count_r, false) + 
-        this.calcPointScore(count_lb + count_rt, false);
-        //保存敌方得分最大点的坐标和分值
-        if(score_sum > maxEnemy.score){
-          maxEnemy.score = score_sum;
-          maxEnemy.x = i;
-          maxEnemy.y = j;
+        let point = new emptyPoint(map, i, j, myColor, this.size);
+        if (point.score > highScorePointList[0].score) {
+          highScorePointList.pop();
+          highScorePointList.unshift({ x: i, y: j, score: point.score });
+        } else if (point.score > highScorePointList[0].score) {
+          highScorePointList.pop();
+          highScorePointList.push({ x: i, y: j, score: point.score });
         }
       }
     }
-    //返回得分最大点的坐标
-    if(maxEnemy.score > maxMine.score){
-      x = maxEnemy.x;
-      y = maxEnemy.y;
-    }else{
-      x = maxMine.x;
-      y = maxMine.y;
+    //TODO 深度为0或者剩余空间不足或者有一方胜出
+    if (depth === 0 || surplusEmptyPointsCount <= 1) {
+      return highScorePointList[0];
+    } else {
+      newMap1[highScorePointList[0].x][highScorePointList[0].y] = myColor;
+      newMap2[highScorePointList[1].x][highScorePointList[1].y] = myColor;
+      let point1 = this.calcPlacementCoordinate(
+        newMap1,
+        enemyColor,
+        sourceColor,
+        depth - 1,
+        surplusEmptyPointsCount - 1
+      );
+      let point2 = this.calcPlacementCoordinate(
+        newMap2,
+        enemyColor,
+        sourceColor,
+        depth - 1,
+        surplusEmptyPointsCount - 1
+      );
+      if(sourceColor === enemyColor){
+        highScorePointList[0].score += point1.score;
+        highScorePointList[1].score += point2.score;
+      }else{
+        highScorePointList[0].score -= point1.score;
+        highScorePointList[1].score -= point2.score;
+      }
+      if (highScorePointList[0].score > highScorePointList[1].score) {
+        return highScorePointList[0];
+      } else {
+        return highScorePointList[1];
+      }
     }
-    //如果最大得分为0，就落子在中间。
-    if(maxEnemy.score === 0){
-      x = Math.round(this.size/2);
-      y = Math.round(this.size/2);
-    }
-    return {
-      x: x,
-      y: y
-    };
   }
   /**
    * gameAI
@@ -379,13 +667,25 @@ export default class Map extends Vue {
       return;
     }
     //人机机先模式且当前轮到黑子
-    if (this.gameMode === 1 && this.whoDropping == true) {
-      let pos = this.calcPlacementCoordinate(1,2);
+    if (this.gameMode === 1 && this.whoDropping === Who.Black) {
+      let pos = this.calcPlacementCoordinate(
+        this.matrix,
+        PointColor.Black,
+        PointColor.Black,
+        0,
+        this.size * this.size - this.stepStack.length
+      );
       this.dropChessman(pos.x, pos.y);
     }
     //人机人先且当前轮到白子
-    if (this.gameMode === 2 && this.whoDropping === false) {
-      let pos = this.calcPlacementCoordinate(2,1);
+    if (this.gameMode === 2 && this.whoDropping === Who.White) {
+      let pos = this.calcPlacementCoordinate(
+        this.matrix,
+        PointColor.White,
+        PointColor.White,
+        0,
+        this.size * this.size - this.stepStack.length
+      );
       this.dropChessman(pos.x, pos.y);
     }
   }
@@ -396,23 +696,30 @@ export default class Map extends Vue {
    * @return: {void}
    */
   repent(): void {
-    if(this.gameMode === 0 || this.playing === false){
+    //状态切换为游戏中
+    this.playing = true;
+    if (this.gameMode === 0) {
       //栈空了，return
       if (this.stepStack.length < 1) return;
       //最近一步棋出栈
       let [x, y, who] = this.stepStack.pop() as [number, number, boolean];
       //清除矩阵对应位置的记录
-      this.matrix[x][y] = 0;
+      this.matrix[x][y] = PointColor.Empty;
       //切换棋手
       this.whoDropping = who;
-    }else if(this.gameMode === 1 && this.whoDropping === false){
-      //人机机先模式，人执棋可以悔棋
+    } else if (
+      (this.gameMode === 1 && this.whoDropping === Who.White) ||
+      (this.gameMode === 2 && this.whoDropping === Who.Black)
+    ) {
+      //人机模式，人执棋可以悔棋
+      //栈数据不足，return
+      if (this.stepStack.length < 2) return;
       //最近2步棋出栈
       let [x1, y1, who1] = this.stepStack.pop() as [number, number, boolean];
       let [x2, y2, who2] = this.stepStack.pop() as [number, number, boolean];
       //清除矩阵对应位置的记录
-      this.matrix[x1][y1] = 0;
-      this.matrix[x2][y2] = 0;
+      this.matrix[x1][y1] = PointColor.Empty;
+      this.matrix[x2][y2] = PointColor.Empty;
     }
     //重新绘制棋盘
     this.drawChessboard();
@@ -427,7 +734,7 @@ export default class Map extends Vue {
     //清空二维矩阵
     for (let i in this.matrix) {
       for (let j in this.matrix[i]) {
-        this.matrix[i][j] = 0;
+        this.matrix[i][j] = PointColor.Empty;
       }
     }
     //清空落子记录栈
@@ -435,7 +742,7 @@ export default class Map extends Vue {
     //重新绘制棋盘
     this.drawChessboard();
     //落子权回到黑子
-    this.whoDropping = true;
+    this.whoDropping = Who.Black;
     //状态切换为游戏中
     this.playing = true;
   }
@@ -447,19 +754,24 @@ export default class Map extends Vue {
    */
   drawChessboard(): void {
     //设置背景填充色
-    this.canvasContext!.fillStyle = "RGB(194,149,107)"; //"RGB(214,159,64)";
+    this.canvasContext!.fillStyle = "RGB(194,149,107)";
     //绘制矩形背景
     this.canvasContext!.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
     //设置画笔颜色
     this.canvasContext.fillStyle = "#111111";
     //绘制边框需要粗一点
-    this.canvasContext.lineWidth = 4;
+    this.canvasContext.lineWidth = 6;
+    //设置文字居中
+    this.canvasContext.textAlign = "center";
+    this.canvasContext.textBaseline = "middle";
+    //设置字体和大小
+    this.canvasContext.font = "14px Arial";
     //绘制棋盘边框
     this.canvasContext.beginPath();
-    this.canvasContext.moveTo(2, 2);
-    this.canvasContext.lineTo(2, this.canvasWidth - 2);
-    this.canvasContext.lineTo(this.canvasHeight - 2, this.canvasWidth - 2);
-    this.canvasContext.lineTo(this.canvasHeight - 2, 2);
+    this.canvasContext.moveTo(this.latticeWidth, this.latticeHeight);
+    this.canvasContext.lineTo(this.latticeWidth, this.canvasHeight - this.latticeHeight);
+    this.canvasContext.lineTo(this.canvasWidth - this.latticeWidth, this.canvasHeight - this.latticeHeight);
+    this.canvasContext.lineTo(this.canvasWidth - this.latticeWidth, this.latticeHeight);
     this.canvasContext.closePath();
     this.canvasContext.stroke();
     //绘制分割线用1px宽度足矣
@@ -469,20 +781,62 @@ export default class Map extends Vue {
       let line_h = Math.round((i + 1) * this.latticeHeight);
       //绘制一条竖线
       this.canvasContext.beginPath();
-      this.canvasContext.moveTo(line_w, 0);
-      this.canvasContext.lineTo(line_w, this.canvasHeight);
+      this.canvasContext.moveTo(line_w, this.latticeHeight);
+      this.canvasContext.lineTo(line_w, this.canvasHeight - this.latticeHeight);
       this.canvasContext.closePath();
       this.canvasContext.stroke();
       //绘制一条横线
       this.canvasContext.beginPath();
-      this.canvasContext.moveTo(0, line_h);
-      this.canvasContext.lineTo(this.canvasWidth, line_h);
+      this.canvasContext.moveTo(this.latticeWidth, line_h);
+      this.canvasContext.lineTo(this.canvasWidth - this.latticeWidth, line_h);
       this.canvasContext.closePath();
       this.canvasContext.stroke();
     }
+    //画五个黑点
+    this.canvasContext.beginPath();
+    this.canvasContext.arc(
+      4 * this.latticeWidth,
+      4 * this.latticeHeight,
+      this.latticeWidth * 0.15,
+      0,
+      2 * Math.PI
+    );
+    this.canvasContext.arc(
+      12 * this.latticeWidth,
+      4 * this.latticeHeight,
+      this.latticeWidth * 0.15,
+      0,
+      2 * Math.PI
+    );
+    this.canvasContext.fill();
+    this.canvasContext.beginPath();
+    this.canvasContext.arc(
+      4 * this.latticeWidth,
+      12 * this.latticeHeight,
+      this.latticeWidth * 0.15,
+      0,
+      2 * Math.PI
+    );
+    this.canvasContext.arc(
+      12 * this.latticeWidth,
+      12 * this.latticeHeight,
+      this.latticeWidth * 0.15,
+      0,
+      2 * Math.PI
+    );
+    this.canvasContext.fill();
+    this.canvasContext.beginPath();
+    this.canvasContext.arc(
+      8 * this.latticeWidth,
+      8 * this.latticeHeight,
+      this.latticeWidth * 0.15,
+      0,
+      2 * Math.PI
+    );
+    this.canvasContext.fill();
+    //开始绘制棋子
     for (let i = 0; i < this.stepStack.length; i++) {
       let [x, y, who] = this.stepStack[i];
-      //开始绘制棋子
       if (who) {
         //绘制一个黑子
         this.canvasContext.fillStyle = "#000000";
@@ -490,12 +844,13 @@ export default class Map extends Vue {
         this.canvasContext.arc(
           (x + 1) * this.latticeWidth,
           (y + 1) * this.latticeHeight,
-          this.latticeWidth * 0.4,
+          this.latticeWidth * 0.42,
           0,
           2 * Math.PI
         );
         this.canvasContext.closePath();
         this.canvasContext.fill();
+        this.canvasContext.fillStyle = "#FFFFFF";
       } else {
         //绘制一个白子
         this.canvasContext.fillStyle = "#FFFFFF";
@@ -503,13 +858,21 @@ export default class Map extends Vue {
         this.canvasContext.arc(
           (x + 1) * this.latticeWidth,
           (y + 1) * this.latticeHeight,
-          this.latticeWidth * 0.4,
+          this.latticeWidth * 0.42,
           0,
           2 * Math.PI
         );
         this.canvasContext.closePath();
         this.canvasContext.fill();
+        this.canvasContext.fillStyle = "#000000";
       }
+      //绘制棋子编号
+      this.canvasContext.fillText(
+        `${i + 1}`,
+        (x + 1) * this.latticeWidth,
+        (y + 1) * this.latticeHeight,
+        this.latticeWidth * 0.7
+      );
     }
   }
   /**
@@ -524,22 +887,22 @@ export default class Map extends Vue {
     //游戏未开始
     if (this.playing === false) return;
     //当前位置已经下过棋子了
-    if (this.matrix[x][y] !== 0) return;
+    if (this.matrix[x][y] !== PointColor.Empty) return;
     //每一步棋入栈
     this.stepStack.push([x, y, this.whoDropping]);
     //往矩阵中写入棋子信息
-    this.matrix[x][y] = this.whoDropping ? 1 : 2;
+    this.matrix[x][y] = this.whoDropping ? PointColor.Black : PointColor.White;
     //绘制最新棋盘
     this.drawChessboard();
     //判断赢家
     switch (this.whoIsWinner()) {
-      case 1:
+      case PointColor.Black:
         this.playing = false;
         setTimeout(() => {
           alert("黑子赢了");
         }, 200);
         break;
-      case 2:
+      case PointColor.White:
         this.playing = false;
         setTimeout(() => {
           alert("白子赢了");
@@ -558,7 +921,7 @@ export default class Map extends Vue {
    *   判断谁是赢家
    * @return: {number}0没有赢家 1黑子赢 2白子赢
    */
-  whoIsWinner(): number {
+  whoIsWinner(): PointColor {
     for (let i = 2; i < this.size - 2; i++) {
       for (let j = 2; j < this.size - 2; j++) {
         if (this.matrix[i][j] > 0) {
@@ -585,7 +948,7 @@ export default class Map extends Vue {
         }
       }
     }
-    return 0;
+    return PointColor.Empty;
   }
 }
 </script>
@@ -598,17 +961,18 @@ export default class Map extends Vue {
 }
 .map {
   box-shadow: none;
-  border: 10px solid rgb(194, 149, 107); /*rgb(214,159,64);*/
+  border-radius: 10px;
   width: calc(75vh);
   height: calc(75vh);
 }
 @media screen and (max-width: 600px) {
   .map {
-    width: calc(90vw);
-    height: calc(90vw);
+    margin: 0;
+    width: calc(95vw);
+    height: calc(95vw);
   }
   .mapDiv {
-    margin: 30px auto;
+    margin: 10px auto;
     margin-bottom: 0;
     text-align: center;
   }
@@ -642,7 +1006,7 @@ export default class Map extends Vue {
   }
   .button {
     margin: auto;
-    margin-top: 12px;
+    margin-top: 10px;
     width: 100%;
     font-weight: bold;
     justify-content: center;
