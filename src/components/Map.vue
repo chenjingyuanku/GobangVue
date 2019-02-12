@@ -166,28 +166,28 @@ class dirType {
       case ScanDir.LT:
         for (
           let i = this.x - 1, j = this.y - 1, c = 0;
-          i > 0 && j > 0 && c < 4;
+          i >= 0 && j >= 0 && c < 4;
           i--, j--, c++
         ) {
           this.count(i, j, c);
         }
         break;
       case ScanDir.T:
-        for (let i = this.x, j = this.y - 1, c = 0; j > 0 && c < 4; j--, c++) {
+        for (let i = this.x, j = this.y - 1, c = 0; j >= 0 && c < 4; j--, c++) {
           this.count(i, j, c);
         }
         break;
       case ScanDir.RT:
         for (
           let i = this.x + 1, j = this.y - 1, c = 0;
-          i < this.size && j > 0 && c < 4;
+          i < this.size && j >= 0 && c < 4;
           i++, j--, c++
         ) {
           this.count(i, j, c);
         }
         break;
       case ScanDir.L:
-        for (let i = this.x - 1, j = this.y, c = 0; i > 0 && c < 4; i--, c++) {
+        for (let i = this.x - 1, j = this.y, c = 0; i >= 0 && c < 4; i--, c++) {
           this.count(i, j, c);
         }
         break;
@@ -203,7 +203,7 @@ class dirType {
       case ScanDir.LB:
         for (
           let i = this.x - 1, j = this.y + 1, c = 0;
-          i > 0 && j < this.size && c < 4;
+          i >= 0 && j < this.size && c < 4;
           i--, j++, c++
         ) {
           this.count(i, j, c);
