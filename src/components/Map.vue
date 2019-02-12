@@ -103,7 +103,7 @@ class dirType {
    * @param: {number} c 当前扫到第几个
    * @return: {void}
    */
-  count(x: number, y: number, c: number) {
+  count(x: number, y: number, c: number): void {
     if (c > 0) {
       if (
         this.matrix[x][y] === PointColor.Empty &&
@@ -161,7 +161,7 @@ class dirType {
    *   对某个方向进行扫描
    * @return: {void}
    */
-  scan() {
+  scan(): void {
     switch (this.dir) {
       case ScanDir.LT:
         for (
@@ -230,18 +230,6 @@ class dirType {
       default:
         break;
     }
-  }
-  reset() {
-    this.myCount = 0;
-    this.myConsecutiveCount = 0;
-    this.mySearchArea = 0;
-    this.enemyCount = 0;
-    this.enemyConsecutiveCount = 0;
-    this.enemySearchArea = 0;
-    this.myConsecutiveFlag = true;
-    this.enemyConsecutiveFlag = true;
-    this.myScanFlag = true;
-    this.enemyScanFlag = true;
   }
 }
 class emptyPoint {
@@ -985,7 +973,7 @@ export default class Map extends Vue {
    * whoIsWinner
    * @description:
    *   判断谁是赢家
-   * @return: {number}0没有赢家 1黑子赢 2白子赢
+   * @return: {PointColor}0没有赢家 1黑子赢 2白子赢
    */
   whoIsWinner(): PointColor {
     for (let i = 2; i < this.size - 2; i++) {
