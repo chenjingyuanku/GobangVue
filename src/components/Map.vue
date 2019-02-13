@@ -976,28 +976,50 @@ export default class Map extends Vue {
    * @return: {PointColor}0没有赢家 1黑子赢 2白子赢
    */
   whoIsWinner(): PointColor {
-    for (let i = 2; i < this.size - 2; i++) {
-      for (let j = 2; j < this.size - 2; j++) {
-        if (this.matrix[i][j] > 0) {
-          if (
-            (this.matrix[i][j] === this.matrix[i - 2][j - 2] &&
-              this.matrix[i][j] === this.matrix[i - 1][j - 1] &&
-              this.matrix[i][j] === this.matrix[i + 2][j + 2] &&
-              this.matrix[i][j] === this.matrix[i + 1][j + 1]) ||
-            (this.matrix[i][j] === this.matrix[i + 1][j - 1] &&
-              this.matrix[i][j] === this.matrix[i + 2][j - 2] &&
-              this.matrix[i][j] === this.matrix[i - 1][j + 1] &&
-              this.matrix[i][j] === this.matrix[i - 2][j + 2]) ||
-            (this.matrix[i][j] === this.matrix[i - 2][j] &&
-              this.matrix[i][j] === this.matrix[i - 1][j] &&
+    for (let i = 0; i < this.size; i++) {
+      for (let j = 0; j < this.size; j++) {
+        if (this.matrix[i][j] !== PointColor.Empty) {
+          if (i >= 2 && i < this.size - 2 && j >= 2 && j < this.size - 2) {
+            if (
+              (this.matrix[i][j] === this.matrix[i - 2][j - 2] &&
+                this.matrix[i][j] === this.matrix[i - 1][j - 1] &&
+                this.matrix[i][j] === this.matrix[i + 2][j + 2] &&
+                this.matrix[i][j] === this.matrix[i + 1][j + 1]) ||
+              (this.matrix[i][j] === this.matrix[i + 1][j - 1] &&
+                this.matrix[i][j] === this.matrix[i + 2][j - 2] &&
+                this.matrix[i][j] === this.matrix[i - 1][j + 1] &&
+                this.matrix[i][j] === this.matrix[i - 2][j + 2]) ||
+              (this.matrix[i][j] === this.matrix[i - 2][j] &&
+                this.matrix[i][j] === this.matrix[i - 1][j] &&
+                this.matrix[i][j] === this.matrix[i + 2][j] &&
+                this.matrix[i][j] === this.matrix[i + 1][j]) ||
+              (this.matrix[i][j] === this.matrix[i][j - 2] &&
+                this.matrix[i][j] === this.matrix[i][j - 1] &&
+                this.matrix[i][j] === this.matrix[i][j + 2] &&
+                this.matrix[i][j] === this.matrix[i][j + 1])
+            ) {
+              return this.matrix[i][j];
+            }
+          }
+          if (i < this.size - 4) {
+            if (
+              this.matrix[i][j] === this.matrix[i + 1][j] &&
               this.matrix[i][j] === this.matrix[i + 2][j] &&
-              this.matrix[i][j] === this.matrix[i + 1][j]) ||
-            (this.matrix[i][j] === this.matrix[i][j - 2] &&
-              this.matrix[i][j] === this.matrix[i][j - 1] &&
+              this.matrix[i][j] === this.matrix[i + 3][j] &&
+              this.matrix[i][j] === this.matrix[i + 4][j]
+            ) {
+              return this.matrix[i][j];
+            }
+          }
+          if (j < this.size - 4) {
+            if (
+              this.matrix[i][j] === this.matrix[i][j + 1] &&
               this.matrix[i][j] === this.matrix[i][j + 2] &&
-              this.matrix[i][j] === this.matrix[i][j + 1])
-          ) {
-            return this.matrix[i][j];
+              this.matrix[i][j] === this.matrix[i][j + 3] &&
+              this.matrix[i][j] === this.matrix[i][j + 4]
+            ) {
+              return this.matrix[i][j];
+            }
           }
         }
       }
