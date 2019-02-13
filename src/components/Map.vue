@@ -27,7 +27,8 @@ import { Component, Prop, Vue } from "vue-property-decorator";
 enum PointColor {
   Empty = 0,
   Black,
-  White
+  White,
+  Both
 }
 enum ScanDir {
   LT = 0,
@@ -953,13 +954,19 @@ export default class Map extends Vue {
       case PointColor.Black:
         this.playing = false;
         setTimeout(() => {
-          alert("黑子赢了");
+          alert("黑子赢了！！！");
         }, 200);
         break;
       case PointColor.White:
         this.playing = false;
         setTimeout(() => {
-          alert("白子赢了");
+          alert("白子赢了！！！");
+        }, 200);
+        break;
+      case PointColor.Both:
+        this.playing = false;
+        setTimeout(() => {
+          alert("和棋！！！");
         }, 200);
         break;
 
@@ -973,7 +980,7 @@ export default class Map extends Vue {
    * whoIsWinner
    * @description:
    *   判断谁是赢家
-   * @return: {PointColor}0没有赢家 1黑子赢 2白子赢
+   * @return: {PointColor}0没有赢家 1黑子赢 2白子赢 3和棋
    */
   whoIsWinner(): PointColor {
     for (let i = 0; i < this.size; i++) {
