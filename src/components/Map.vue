@@ -1031,6 +1031,9 @@ export default class Map extends Vue {
         }
       }
     }
+    if(this.stepStack.length === this.size * this.size){
+      return PointColor.Both;
+    }
     return PointColor.Empty;
   }
 }
