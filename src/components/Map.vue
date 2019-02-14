@@ -995,15 +995,7 @@ export default class Map extends Vue {
               (this.matrix[i][j] === this.matrix[i + 1][j - 1] &&
                 this.matrix[i][j] === this.matrix[i + 2][j - 2] &&
                 this.matrix[i][j] === this.matrix[i - 1][j + 1] &&
-                this.matrix[i][j] === this.matrix[i - 2][j + 2]) ||
-              (this.matrix[i][j] === this.matrix[i - 2][j] &&
-                this.matrix[i][j] === this.matrix[i - 1][j] &&
-                this.matrix[i][j] === this.matrix[i + 2][j] &&
-                this.matrix[i][j] === this.matrix[i + 1][j]) ||
-              (this.matrix[i][j] === this.matrix[i][j - 2] &&
-                this.matrix[i][j] === this.matrix[i][j - 1] &&
-                this.matrix[i][j] === this.matrix[i][j + 2] &&
-                this.matrix[i][j] === this.matrix[i][j + 1])
+                this.matrix[i][j] === this.matrix[i - 2][j + 2])
             ) {
               return this.matrix[i][j];
             }
