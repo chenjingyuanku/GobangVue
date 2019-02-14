@@ -287,7 +287,7 @@ class emptyPoint {
     myCountSum = dirA.myCount + dirB.myCount;
     validArea = dirA.mySearchArea + dirB.mySearchArea;
     if (validArea < 4) {
-      return 0; //TODO 一个很小的值
+      return 5; //当前方向被封死了，返回一个很小的值
     }
     if (dirA.mySearchArea === dirA.myConsecutiveCount) {
       closeSides++;
@@ -369,7 +369,7 @@ class emptyPoint {
     enemyCountSum = dirA.enemyCount + dirB.enemyCount;
     validArea = dirA.enemySearchArea + dirB.enemySearchArea;
     if (validArea < 4) {
-      return 0; //TODO 一个很小的值
+      return 5; //当前方向被堵死，返回一个很小的值
     }
     if (dirA.enemySearchArea === dirA.enemyConsecutiveCount) {
       closeSides++;
@@ -667,7 +667,7 @@ export default class Map extends Vue {
         }
       }
     }
-    //TODO 深度为0或者剩余空间不足或者有一方胜出
+    //深度为0或者剩余空间不足
     if (depth === 0 || surplusEmptyPointsCount <= 1) {
       return highScorePointList[0];
     } else {
